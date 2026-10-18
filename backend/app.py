@@ -2,7 +2,9 @@
 import os
 from datetime import datetime, timezone
 from functools import wraps
+from pathlib import Path
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import (
@@ -14,6 +16,8 @@ from flask_jwt_extended import (
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from werkzeug.security import generate_password_hash, check_password_hash
+
+load_dotenv(Path(__file__).with_name(".env"))
 
 
 # --------------------------------------------------
@@ -60,11 +64,12 @@ CORS(
 
 MONGO_URI = os.environ.get(
     "MONGO_URI",
-    "mongodb://127.0.0.1:27017",
+    # "mongodb://localhost:27017/BankShield"
+    "mongodb://127.0.0.1:27017", 
 )
 
 client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-db = client["BankShield"]
+db = client.get_default_database("BankShield")
 
 users_collection = db["users"]
 transactions_collection = db["transactions"]
