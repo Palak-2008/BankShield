@@ -9,7 +9,7 @@ BankShield is a full-stack web application designed to demonstrate secure bankin
 - **Risk Assessment:** Identify and highlight transactions that require additional review.
 - **Admin Review:** Allow authorized administrators to review flagged transactions.
 - **Audit Logging:** Record authentication and transaction review events for traceability.
-- **Dashboard UI:** Responsive interface built with React.js and Material UI.
+- **Dashboard UI:** Responsive user interface built with React.js and Material UI.
 
 ## Technology Stack
 
@@ -26,10 +26,13 @@ BankShield is a full-stack web application designed to demonstrate secure bankin
 ```text
 BankShield/
 ├── backend/
-│   └── app.py
+│   ├── app.py
+│   └── requirements.txt
 ├── frontend/
-│   └── src/
-│       └── App.jsx
+│   ├── src/
+│   │   └── App.jsx
+│   ├── package.json
+│   └── package-lock.json
 ├── .gitignore
 ├── package.json
 ├── package-lock.json
@@ -45,42 +48,80 @@ BankShield/
 - MongoDB
 - Git
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Palak-2008/BankShield.git
 cd BankShield
 ```
 
-### 2. Set up the backend
+### 2. Set Up the Backend
 
-Open a terminal in the backend directory:
+Open a terminal in the project directory and navigate to the backend:
 
 ```bash
 cd backend
-pip install Flask Flask-Cors Flask-JWT-Extended pymongo python-dotenv
+```
+
+Install the required Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+#### Configure the JWT Secret
+
+BankShield requires the `BANKSHIELD_JWT_SECRET` environment variable to be set before starting the backend.
+
+In PowerShell, generate a secure secret for the current terminal session:
+
+```powershell
+$env:BANKSHIELD_JWT_SECRET = python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Keep the generated secret private. If you open a new terminal, you will need to set the variable again unless you configure it through a persistent, secure environment setting.
+
+#### Start the Backend
+
+Make sure MongoDB is running and the database connection settings are correct. Then run:
+
+```bash
 python app.py
 ```
 
-Configure the MongoDB connection and a strong JWT secret using environment variables where required by the application.
+The Flask API should start at:
 
-### 3. Set up the frontend
+`http://127.0.0.1:5000`
 
-Open another terminal in the project directory:
+Keep this terminal open while using the application.
+
+### 3. Set Up the Frontend
+
+Open a **second terminal** in the main `BankShield` project directory.
+
+Install the frontend dependencies:
 
 ```bash
 npm install
+```
+
+Start the Vite development server:
+
+```bash
 npm run dev
 ```
 
-Open the local URL printed by Vite in your browser.
+Open the local URL displayed in the terminal, usually:
+
+`http://localhost:5173`
 
 ## Security Notes
 
 - Passwords should be stored as secure hashes, not plain text.
 - Use a strong, private JWT secret and keep environment files out of version control.
-- Keep authorization checks on the backend, not just in the frontend.
+- Enforce authentication and authorization checks on the backend.
 - Use synthetic data for demonstrations; this project is not connected to a real banking system.
+- Never commit passwords, API keys, or other secrets to GitHub.
 
 ## Future Improvements
 
