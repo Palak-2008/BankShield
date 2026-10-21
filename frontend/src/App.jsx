@@ -25,6 +25,9 @@ import {
   Alert,
   InputAdornment,
   IconButton,
+  CssBaseline,
+  ThemeProvider,
+  createTheme,
 } from "@mui/material";
 
 import SecurityIcon from "@mui/icons-material/Security";
@@ -36,22 +39,225 @@ import ShieldIcon from "@mui/icons-material/Shield";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
+// --------------------------------------------------
+// BANKSHIELD THEME: MIDNIGHT NAVY + TEAL
+// --------------------------------------------------
+
+const bankShieldTheme = createTheme({
+  palette: {
+    mode: "light",
+    primary: {
+      main: "#172554",
+      dark: "#101828",
+      light: "#334b7a",
+      contrastText: "#ffffff",
+    },
+    secondary: {
+      main: "#0f9f93",
+      dark: "#0b8178",
+      light: "#5eead4",
+      contrastText: "#ffffff",
+    },
+    background: {
+      default: "#f4f7fb",
+      paper: "#ffffff",
+    },
+    text: {
+      primary: "#172033",
+      secondary: "#64748b",
+    },
+    success: { main: "#15803d" },
+    warning: { main: "#b45309" },
+    error: { main: "#b91c1c" },
+    info: { main: "#0f9f93" },
+  },
+
+  shape: {
+    borderRadius: 12,
+  },
+
+  typography: {
+    fontFamily: '"Inter", "Segoe UI", Roboto, Arial, sans-serif',
+    h4: {
+      fontWeight: 750,
+      letterSpacing: "-0.025em",
+    },
+    h5: {
+      fontWeight: 700,
+      letterSpacing: "-0.02em",
+    },
+    h6: {
+      fontWeight: 700,
+      letterSpacing: "-0.01em",
+    },
+    button: {
+      textTransform: "none",
+      fontWeight: 650,
+    },
+  },
+
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundColor: "#f4f7fb",
+        },
+        "::selection": {
+          backgroundColor: "#99f6e4",
+          color: "#101828",
+        },
+      },
+    },
+
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundImage: "none",
+          boxShadow: "0 4px 18px rgba(16, 24, 40, 0.12)",
+        },
+      },
+    },
+
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          border: "1px solid #e5eaf1",
+          boxShadow: "0 5px 18px rgba(16, 24, 40, 0.045)",
+          backgroundImage: "none",
+        },
+      },
+    },
+
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 9,
+          paddingInline: 16,
+        },
+        containedPrimary: {
+          boxShadow: "none",
+          "&:hover": {
+            boxShadow: "none",
+            backgroundColor: "#101828",
+          },
+        },
+        containedSecondary: {
+          boxShadow: "none",
+          "&:hover": {
+            boxShadow: "none",
+            backgroundColor: "#0b8178",
+          },
+        },
+      },
+    },
+
+    MuiTableCell: {
+      styleOverrides: {
+        head: {
+          backgroundColor: "#edf2f7",
+          color: "#172554",
+          fontWeight: 700,
+          whiteSpace: "nowrap",
+          borderBottom: "1px solid #dce5ef",
+        },
+        root: {
+          borderColor: "#e5eaf1",
+          paddingTop: 13,
+          paddingBottom: 13,
+        },
+      },
+    },
+
+    MuiTableRow: {
+      styleOverrides: {
+        root: {
+          "&:last-child td": {
+            borderBottom: 0,
+          },
+          "&:hover": {
+            backgroundColor: "#f0fdfa",
+          },
+        },
+      },
+    },
+
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: "none",
+        },
+      },
+    },
+
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#0f9f93",
+          },
+        },
+      },
+    },
+
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          "&.Mui-focused": {
+            color: "#0b8178",
+          },
+        },
+      },
+    },
+  },
+});
+
+// --------------------------------------------------
+// API CONFIGURATION
+// --------------------------------------------------
+
 const API_URL = "http://127.0.0.1:5000/api";
 
 const api = axios.create({
   baseURL: API_URL,
 });
 
-// Reusable dashboard summary card
+// --------------------------------------------------
+// REUSABLE DASHBOARD SUMMARY CARD
+// --------------------------------------------------
+
 function SummaryCard({ title, value, icon, color }) {
   return (
-    <Card sx={{ height: "100%", borderRadius: 3 }}>
+    <Card
+      sx={{
+        height: "100%",
+        borderRadius: 3,
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        "&:hover": {
+          transform: "translateY(-3px)",
+          boxShadow: "0 10px 24px rgba(16, 24, 40, 0.09)",
+        },
+      }}
+    >
       <CardContent>
-        <Box display="flex" justifyContent="space-between">
+        <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography color="text.secondary" variant="body2">
             {title}
           </Typography>
-          <Box sx={{ color }}>{icon}</Box>
+
+          <Box
+            sx={{
+              color,
+              bgcolor: `${color}14`,
+              borderRadius: 2,
+              p: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {icon}
+          </Box>
         </Box>
 
         <Typography variant="h4" fontWeight="bold" mt={2}>
@@ -108,14 +314,37 @@ function LoginPage({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "#f4f7fb",
+        bgcolor: "background.default",
         p: 2,
+        background:
+          "radial-gradient(circle at top left, #e0f2f1 0%, #f4f7fb 42%, #eef2ff 100%)",
       }}
     >
-      <Card sx={{ width: "100%", maxWidth: 450, borderRadius: 4 }}>
-        <CardContent sx={{ p: 4 }}>
+      <Card
+        sx={{
+          width: "100%",
+          maxWidth: 450,
+          borderRadius: 4,
+          overflow: "hidden",
+        }}
+      >
+        <Box sx={{ height: 5, bgcolor: "secondary.main" }} />
+
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
           <Box textAlign="center" mb={3}>
-            <SecurityIcon sx={{ fontSize: 58, color: "#1976d2" }} />
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "#e0f2f1",
+                color: "secondary.dark",
+                borderRadius: 3,
+                p: 1.5,
+              }}
+            >
+              <SecurityIcon sx={{ fontSize: 42 }} />
+            </Box>
 
             <Typography variant="h3" fontWeight="bold" mt={1}>
               BankShield
@@ -189,6 +418,7 @@ function LoginPage({
               type="submit"
               fullWidth
               variant="contained"
+              color="secondary"
               size="large"
               disabled={loading}
               sx={{ mt: 3, py: 1.4 }}
@@ -203,6 +433,7 @@ function LoginPage({
               <Button
                 size="small"
                 onClick={onSwitchToRegister}
+                color="secondary"
               >
                 Create account
               </Button>
@@ -291,14 +522,37 @@ function RegisterPage({ onSwitchToLogin }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "#f4f7fb",
+        bgcolor: "background.default",
         p: 2,
+        background:
+          "radial-gradient(circle at top left, #e0f2f1 0%, #f4f7fb 42%, #eef2ff 100%)",
       }}
     >
-      <Card sx={{ width: "100%", maxWidth: 450, borderRadius: 4 }}>
-        <CardContent sx={{ p: 4 }}>
+      <Card
+        sx={{
+          width: "100%",
+          maxWidth: 450,
+          borderRadius: 4,
+          overflow: "hidden",
+        }}
+      >
+        <Box sx={{ height: 5, bgcolor: "secondary.main" }} />
+
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
           <Box textAlign="center" mb={3}>
-            <SecurityIcon sx={{ fontSize: 58, color: "#1976d2" }} />
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "#e0f2f1",
+                color: "secondary.dark",
+                borderRadius: 3,
+                p: 1.5,
+              }}
+            >
+              <SecurityIcon sx={{ fontSize: 42 }} />
+            </Box>
 
             <Typography variant="h3" fontWeight="bold" mt={1}>
               BankShield
@@ -387,6 +641,7 @@ function RegisterPage({ onSwitchToLogin }) {
               type="submit"
               fullWidth
               variant="contained"
+              color="secondary"
               size="large"
               disabled={loading}
               sx={{ mt: 3, py: 1.4 }}
@@ -401,6 +656,7 @@ function RegisterPage({ onSwitchToLogin }) {
               <Button
                 size="small"
                 onClick={() => onSwitchToLogin("")}
+                color="secondary"
               >
                 Sign in
               </Button>
@@ -499,9 +755,9 @@ function Dashboard({ user, onLogout }) {
     const query = search.trim().toLowerCase();
 
     const matchesSearch =
-      transaction.id.toLowerCase().includes(query) ||
-      transaction.account.toLowerCase().includes(query) ||
-      transaction.reason.toLowerCase().includes(query);
+      String(transaction.id ?? "").toLowerCase().includes(query) ||
+      String(transaction.account ?? "").toLowerCase().includes(query) ||
+      String(transaction.reason ?? "").toLowerCase().includes(query);
 
     const matchesStatus =
       statusFilter === "All" ||
@@ -521,10 +777,10 @@ function Dashboard({ user, onLogout }) {
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#f4f7fb" }}>
-      <AppBar position="static" sx={{ bgcolor: "#102a43" }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+      <AppBar position="static" color="primary">
         <Toolbar sx={{ gap: 1, flexWrap: "wrap" }}>
-          <SecurityIcon sx={{ mr: 1 }} />
+          <SecurityIcon sx={{ mr: 1, color: "secondary.light" }} />
 
           <Typography
             variant="h6"
@@ -538,7 +794,11 @@ function Dashboard({ user, onLogout }) {
             label={`${user.username} · ${user.role}`}
             color="info"
             variant="outlined"
-            sx={{ color: "white" }}
+            sx={{
+              color: "#ffffff",
+              borderColor: "rgba(255,255,255,0.45)",
+              "& .MuiChip-label": { fontWeight: 600 },
+            }}
           />
 
           <Button color="inherit" onClick={onLogout}>
@@ -547,7 +807,7 @@ function Dashboard({ user, onLogout }) {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 2.5, sm: 4 } }}>
         <Typography
           variant="h4"
           fontWeight="bold"
@@ -574,17 +834,19 @@ function Dashboard({ user, onLogout }) {
 
         {loading ? (
           <Box display="flex" justifyContent="center" py={8}>
-            <CircularProgress />
+            <CircularProgress color="secondary" />
           </Box>
         ) : (
           <>
+            {/* DASHBOARD SUMMARY CARDS */}
+
             <Grid container spacing={3} sx={{ mb: 4 }}>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <SummaryCard
                   title="Total Transactions"
                   value={transactions.length}
                   icon={<AccountBalanceIcon />}
-                  color="#1976d2"
+                  color="#0f9f93"
                 />
               </Grid>
 
@@ -593,7 +855,7 @@ function Dashboard({ user, onLogout }) {
                   title="Flagged Transactions"
                   value={flaggedCount}
                   icon={<WarningAmberIcon />}
-                  color="#ed6c02"
+                  color="#b45309"
                 />
               </Grid>
 
@@ -602,7 +864,7 @@ function Dashboard({ user, onLogout }) {
                   title="Reviewed Transactions"
                   value={reviewedCount}
                   icon={<CheckCircleIcon />}
-                  color="#2e7d32"
+                  color="#15803d"
                 />
               </Grid>
 
@@ -611,17 +873,22 @@ function Dashboard({ user, onLogout }) {
                   title="High-Risk Transactions"
                   value={highRiskCount}
                   icon={<ShieldIcon />}
-                  color="#d32f2f"
+                  color="#b91c1c"
                 />
               </Grid>
             </Grid>
 
-            {/* Transaction monitoring */}
+            {/* TRANSACTION MONITORING */}
+
             <Card sx={{ borderRadius: 3, mb: 4 }}>
               <CardContent sx={{ p: { xs: 1.5, sm: 3 } }}>
-                <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                  Transaction Monitoring & Risk Assessment
-                </Typography>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <ShieldIcon color="secondary" />
+
+                  <Typography variant="h6" fontWeight="bold">
+                    Transaction Monitoring & Risk Assessment
+                  </Typography>
+                </Box>
 
                 <Box
                   display="flex"
@@ -670,6 +937,7 @@ function Dashboard({ user, onLogout }) {
 
                   <Button
                     variant="outlined"
+                    color="secondary"
                     onClick={() => {
                       setSearch("");
                       setStatusFilter("All");
@@ -680,10 +948,14 @@ function Dashboard({ user, onLogout }) {
                   </Button>
                 </Box>
 
-                <TableContainer component={Paper} variant="outlined">
+                <TableContainer
+                  component={Paper}
+                  variant="outlined"
+                  sx={{ borderRadius: 2 }}
+                >
                   <Table sx={{ minWidth: 1050 }}>
                     <TableHead>
-                      <TableRow sx={{ bgcolor: "#edf2f7" }}>
+                      <TableRow>
                         <TableCell>Transaction ID</TableCell>
                         <TableCell>Account</TableCell>
                         <TableCell>Amount (INR)</TableCell>
@@ -697,72 +969,87 @@ function Dashboard({ user, onLogout }) {
 
                     <TableBody>
                       {filteredTransactions.length > 0 ? (
-                        filteredTransactions.map((transaction) => (
-                          <TableRow key={transaction.id} hover>
-                            <TableCell>{transaction.id}</TableCell>
+                        filteredTransactions.map((transaction) => {
+                          const transactionId = String(
+                            transaction.id ?? transaction._id ?? ""
+                          );
+                          const amount = Number(transaction.amount ?? 0);
+                          const riskLevel =
+                            transaction.risk_level ?? "Unknown";
+                          const status = transaction.status ?? "Unknown";
 
-                            <TableCell>{transaction.account}</TableCell>
+                          return (
+                            <TableRow
+                              key={transactionId}
+                              hover
+                            >
+                              <TableCell>{transactionId || "—"}</TableCell>
 
-                            <TableCell>
-                              ₹{transaction.amount.toLocaleString("en-IN")}
-                            </TableCell>
+                              <TableCell>
+                                {transaction.account ?? "—"}
+                              </TableCell>
 
-                            <TableCell>
-                              {transaction.risk_score}
-                            </TableCell>
+                              <TableCell>
+                                ₹{amount.toLocaleString("en-IN")}
+                              </TableCell>
 
-                            <TableCell>
-                              <Chip
-                                size="small"
-                                label={`${transaction.risk_level} Risk`}
-                                color={
-                                  riskColors[transaction.risk_level] ||
-                                  "default"
-                                }
-                              />
-                            </TableCell>
+                              <TableCell>
+                                {transaction.risk_score ?? "—"}
+                              </TableCell>
 
-                            <TableCell>
-                              <Chip
-                                size="small"
-                                label={transaction.status}
-                                color={
-                                  transaction.status === "Flagged"
-                                    ? "warning"
-                                    : "success"
-                                }
-                              />
-                            </TableCell>
-
-                            <TableCell>
-                              {(transaction.risk_reasons || []).join(", ")}
-                            </TableCell>
-
-                            <TableCell>
-                              {transaction.status === "Flagged" &&
-                              isAdmin ? (
-                                <Button
+                              <TableCell>
+                                <Chip
                                   size="small"
-                                  variant="contained"
-                                  disabled={reviewingId === transaction.id}
-                                  onClick={() =>
-                                    reviewTransaction(transaction.id)
+                                  label={`${riskLevel} Risk`}
+                                  color={riskColors[riskLevel] || "default"}
+                                />
+                              </TableCell>
+
+                              <TableCell>
+                                <Chip
+                                  size="small"
+                                  label={status}
+                                  color={
+                                    status === "Flagged"
+                                      ? "warning"
+                                      : status === "Reviewed"
+                                        ? "success"
+                                        : "default"
                                   }
-                                >
-                                  {reviewingId === transaction.id
-                                    ? "Saving..."
-                                    : "Mark Reviewed"}
-                                </Button>
-                              ) : (
-                                <Typography variant="body2">
-                                  {transaction.status === "Reviewed"
-                                    ? "Reviewed"
-                                    : "Admin access required"}
-                                </Typography>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))
+                                />
+                              </TableCell>
+
+                              <TableCell>
+                                {(transaction.risk_reasons || []).join(", ") ||
+                                  "—"}
+                              </TableCell>
+
+                              <TableCell>
+                                {status === "Flagged" && isAdmin ? (
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    color="secondary"
+                                    disabled={reviewingId === transactionId}
+                                    onClick={() =>
+                                      reviewTransaction(transactionId)
+                                    }
+                                  >
+                                    {reviewingId === transactionId
+                                      ? "Saving..."
+                                      : "Mark Reviewed"}
+                                  </Button>
+                                ) : (
+                                  <Typography variant="body2" color="text.secondary">
+                                    {status === "Reviewed"
+                                      ? "Reviewed"
+                                      : "Admin access required"}
+                                  </Typography>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       ) : (
                         <TableRow>
                           <TableCell colSpan={8} align="center">
@@ -786,10 +1073,17 @@ function Dashboard({ user, onLogout }) {
               </CardContent>
             </Card>
 
-            {/* Audit history */}
+            {/* AUDIT HISTORY */}
+
             <Card sx={{ borderRadius: 3 }}>
               <CardContent sx={{ p: { xs: 1.5, sm: 3 } }}>
-                <Box display="flex" alignItems="center" gap={1} mb={1}>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
+                  mb={1}
+                  flexWrap="wrap"
+                >
                   <HistoryIcon color="primary" />
 
                   <Typography variant="h6" fontWeight="bold">
@@ -799,59 +1093,131 @@ function Dashboard({ user, onLogout }) {
                   <Chip
                     label={`${auditLogs.length} events`}
                     size="small"
+                    color="secondary"
+                    variant="outlined"
                   />
                 </Box>
 
                 <Typography color="text.secondary" sx={{ mb: 2 }}>
-                  Recorded transaction review actions retrieved from MongoDB.
+                  Recorded transaction and authentication events retrieved
+                  from MongoDB.
                 </Typography>
 
-                <TableContainer component={Paper} variant="outlined">
+                <TableContainer
+                  component={Paper}
+                  variant="outlined"
+                  sx={{ borderRadius: 2 }}
+                >
                   <Table sx={{ minWidth: 650 }}>
                     <TableHead>
-                      <TableRow sx={{ bgcolor: "#edf2f7" }}>
+                      <TableRow>
                         <TableCell>Transaction ID</TableCell>
                         <TableCell>Action</TableCell>
                         <TableCell>Previous Status</TableCell>
                         <TableCell>New Status</TableCell>
-                        <TableCell>Date & Time (UTC)</TableCell>
+                        <TableCell>Date &amp; Time (UTC)</TableCell>
                       </TableRow>
                     </TableHead>
 
                     <TableBody>
                       {auditLogs.length > 0 ? (
-                        auditLogs.map((log, index) => (
-                          <TableRow
-                            key={`${log.transaction_id}-${log.timestamp}-${index}`}
-                          >
-                            <TableCell>{log.transaction_id}</TableCell>
+                        auditLogs.map((log, index) => {
+                          const transactionId =
+                            log.transaction_id ??
+                            log.transactionId ??
+                            "";
 
-                            <TableCell>
-                              <Chip
-                                size="small"
-                                label={log.action}
-                                variant="outlined"
-                                color="info"
-                              />
-                            </TableCell>
+                          const action = log.action ?? "Unknown";
 
-                            <TableCell>{log.previous_status}</TableCell>
+                          const previousStatus =
+                            log.previous_status ??
+                            log.previousStatus ??
+                            "";
 
-                            <TableCell>
-                              <Chip
-                                size="small"
-                                label={log.new_status}
-                                color="success"
-                              />
-                            </TableCell>
+                          const newStatus =
+                            log.new_status ??
+                            log.newStatus ??
+                            "";
 
-                            <TableCell>
-                              {log.timestamp
-                                ? new Date(log.timestamp).toLocaleString()
-                                : "N/A"}
-                            </TableCell>
-                          </TableRow>
-                        ))
+                          const timestamp = log.timestamp;
+
+                          return (
+                            <TableRow
+                              key={`${transactionId}-${timestamp ?? index}-${index}`}
+                              hover
+                            >
+                              <TableCell>
+                                {transactionId || "—"}
+                              </TableCell>
+
+                              <TableCell>
+                                <Chip
+                                  size="small"
+                                  label={action}
+                                  variant="outlined"
+                                  color={
+                                    String(action).toUpperCase() === "LOGIN" ||
+                                    String(action).toUpperCase() === "REGISTER"
+                                      ? "info"
+                                      : "primary"
+                                  }
+                                  sx={
+                                    String(action).toUpperCase() === "LOGIN" ||
+                                    String(action).toUpperCase() === "REGISTER"
+                                      ? {
+                                          borderColor: "#0f9f93",
+                                          color: "#0b8178",
+                                          fontWeight: 600,
+                                        }
+                                      : { fontWeight: 600 }
+                                  }
+                                />
+                              </TableCell>
+
+                              <TableCell>
+                                {previousStatus || "—"}
+                              </TableCell>
+
+                              <TableCell>
+                                {newStatus ? (
+                                  <Chip
+                                    size="small"
+                                    label={newStatus}
+                                    color={
+                                      String(newStatus).toLowerCase() ===
+                                      "flagged"
+                                        ? "warning"
+                                        : String(newStatus).toLowerCase() ===
+                                            "reviewed"
+                                          ? "success"
+                                          : "default"
+                                    }
+                                  />
+                                ) : (
+                                  "—"
+                                )}
+                              </TableCell>
+
+                              <TableCell>
+                                {timestamp
+                                  ? new Date(timestamp).toLocaleString(
+                                      "en-GB",
+                                      {
+                                        timeZone: "UTC",
+                                        year: "numeric",
+                                        month: "2-digit",
+                                        day: "2-digit",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        second: "2-digit",
+                                        hour12: false,
+                                      }
+                                    )
+                                  : "N/A"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       ) : (
                         <TableRow>
                           <TableCell colSpan={5} align="center">
@@ -875,7 +1241,7 @@ function Dashboard({ user, onLogout }) {
 // MAIN APPLICATION
 // --------------------------------------------------
 
-function BankShieldApp() {
+function BankShieldContent() {
   const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("login");
@@ -923,4 +1289,15 @@ function BankShieldApp() {
   return <Dashboard user={user} onLogout={logout} />;
 }
 
-export default BankShieldApp;
+// --------------------------------------------------
+// THEMED ROOT
+// --------------------------------------------------
+
+export default function BankShieldApp() {
+  return (
+    <ThemeProvider theme={bankShieldTheme}>
+      <CssBaseline />
+      <BankShieldContent />
+    </ThemeProvider>
+  );
+}

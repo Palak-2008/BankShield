@@ -1,23 +1,19 @@
 
 import os
 from datetime import datetime, timezone
-from functools import wraps
-from pathlib import Path
 
-from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
+    get_jwt,
     get_jwt_identity,
     jwt_required,
 )
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from werkzeug.security import generate_password_hash, check_password_hash
-
-load_dotenv(Path(__file__).with_name(".env"))
 
 
 # --------------------------------------------------
@@ -30,15 +26,13 @@ app.config["JWT_SECRET_KEY"] = os.environ.get(
     "BANKSHIELD_JWT_SECRET",
     "development-only-change-this-secret-before-deployment",
 )
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 60 * 60  # 1 hour
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 60 * 60
 
 jwt = JWTManager(app)
 
 
 # --------------------------------------------------
 # 2. CORS CONFIGURATION
-# Allows the Vite frontend on localhost ports
-# such as 5173, 5174 and 5175.
 # --------------------------------------------------
 
 CORS(
@@ -64,12 +58,11 @@ CORS(
 
 MONGO_URI = os.environ.get(
     "MONGO_URI",
-    # "mongodb://localhost:27017/BankShield"
-    "mongodb://127.0.0.1:27017", 
+    "mongodb://127.0.0.1:27017",
 )
 
 client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-db = client.get_default_database("BankShield")
+db = client["BankShield"]
 
 users_collection = db["users"]
 transactions_collection = db["transactions"]
@@ -81,16 +74,14 @@ def utc_now():
 
 
 def write_audit(username, action, details=""):
-    """Save an audit event without exposing passwords or tokens."""
+    """Save an audit event without storing passwords or tokens."""
     try:
-        audit_collection.insert_one(
-            {
-                "username": username,
-                "action": action,
-                "details": details,
-                "timestamp": utc_now(),
-            }
-        )
+        audit_collection.insert_one({
+            "username": username,
+            "action": action,
+            "details": details,
+            "timestamp": utc_now(),
+        })
     except PyMongoError:
         app.logger.exception("Could not save audit event")
 
@@ -121,31 +112,26 @@ def internal_error(error):
 
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify(
-        {
-            "message": "BankShield API is running",
-            "status": "running",
-        }
-    ), 200
+    return jsonify({
+        "message": "BankShield API is running",
+        "status": "running",
+    }), 200
 
 
 @app.route("/api/health", methods=["GET"])
 def health():
     try:
         client.admin.command("ping")
-        return jsonify(
-            {
-                "status": "healthy",
-                "database": "connected",
-            }
-        ), 200
+        return jsonify({
+            "status": "healthy",
+            "database": "connected",
+        }), 200
     except PyMongoError:
-        return jsonify(
-            {
-                "status": "error",
-                "database": "disconnected",
-            }
-        ), 503
+        app.logger.exception("MongoDB health check failed")
+        return jsonify({
+            "status": "error",
+            "database": "disconnected",
+        }), 503
 
 
 # --------------------------------------------------
@@ -164,20 +150,20 @@ def register():
         username = str(data.get("username", "")).strip()
         password = data.get("password", "")
 
-        if not username or not isinstance(password, str):
-            return jsonify(
-                {"message": "Username and password are required"}
-            ), 400
+        if not username or not isinstance(password, str) or not password:
+            return jsonify({
+                "message": "Username and password are required"
+            }), 400
 
         if len(username) < 3:
-            return jsonify(
-                {"message": "Username must contain at least 3 characters"}
-            ), 400
+            return jsonify({
+                "message": "Username must contain at least 3 characters"
+            }), 400
 
         if len(password) < 8:
-            return jsonify(
-                {"message": "Password must contain at least 8 characters"}
-            ), 400
+            return jsonify({
+                "message": "Password must contain at least 8 characters"
+            }), 400
 
         existing_user = users_collection.find_one(
             {"username": username},
@@ -185,9 +171,9 @@ def register():
         )
 
         if existing_user:
-            return jsonify(
-                {"message": "Username already exists"}
-            ), 409
+            return jsonify({
+                "message": "Username already exists"
+            }), 409
 
         user_document = {
             "username": username,
@@ -200,23 +186,22 @@ def register():
 
         write_audit(username, "REGISTER", "Account created")
 
-        return jsonify(
-            {
-                "message": "Account created successfully",
-                "username": username,
-            }
-        ), 201
+        return jsonify({
+            "message": "Account created successfully",
+            "username": username,
+        }), 201
 
     except PyMongoError:
         app.logger.exception("Registration database error")
-        return jsonify(
-            {"message": "Database error during registration"}
-        ), 500
+        return jsonify({
+            "message": "Database error during registration"
+        }), 500
+
     except Exception:
         app.logger.exception("Registration error")
-        return jsonify(
-            {"message": "Registration failed"}
-        ), 500
+        return jsonify({
+            "message": "Registration failed"
+        }), 500
 
 
 # --------------------------------------------------
@@ -236,9 +221,9 @@ def login():
         password = data.get("password", "")
 
         if not username or not isinstance(password, str) or not password:
-            return jsonify(
-                {"message": "Username and password are required"}
-            ), 400
+            return jsonify({
+                "message": "Username and password are required"
+            }), 400
 
         user = users_collection.find_one({"username": username})
 
@@ -246,41 +231,42 @@ def login():
             user.get("password_hash", ""),
             password,
         ):
-            return jsonify(
-                {"message": "Invalid username or password"}
-            ), 401
+            return jsonify({
+                "message": "Invalid username or password"
+            }), 401
+
+        role = user.get("role", "user")
 
         access_token = create_access_token(
             identity=username,
-            additional_claims={"role": user.get("role", "user")},
+            additional_claims={"role": role},
         )
 
         write_audit(username, "LOGIN", "Successful login")
 
-        return jsonify(
-            {
-                "message": "Login successful",
-                "access_token": access_token,
-                "token": access_token,
+        return jsonify({
+            "message": "Login successful",
+            "access_token": access_token,
+            "token": access_token,
+            "username": username,
+            "role": role,
+            "user": {
                 "username": username,
-                "role": user.get("role", "user"),
-                "user": {
-                    "username": username,
-                    "role": user.get("role", "user"),
-                },
-            }
-        ), 200
+                "role": role,
+            },
+        }), 200
 
     except PyMongoError:
         app.logger.exception("Login database error")
-        return jsonify(
-            {"message": "Database error during login"}
-        ), 500
+        return jsonify({
+            "message": "Database error during login"
+        }), 500
+
     except Exception:
         app.logger.exception("Login error")
-        return jsonify(
-            {"message": "Login failed"}
-        ), 500
+        return jsonify({
+            "message": "Login failed"
+        }), 500
 
 
 # --------------------------------------------------
@@ -292,6 +278,7 @@ def login():
 @jwt_required()
 def current_user():
     username = get_jwt_identity()
+
     user = users_collection.find_one(
         {"username": username},
         {"_id": 0, "username": 1, "role": 1, "created_at": 1},
@@ -304,7 +291,7 @@ def current_user():
 
 
 # --------------------------------------------------
-# 9. TRANSACTIONS
+# 9. GET TRANSACTIONS
 # GET /api/transactions
 # --------------------------------------------------
 
@@ -323,9 +310,9 @@ def get_transactions():
 
     except PyMongoError:
         app.logger.exception("Could not load transactions")
-        return jsonify(
-            {"message": "Could not load transactions"}
-        ), 500
+        return jsonify({
+            "message": "Could not load transactions"
+        }), 500
 
 
 # --------------------------------------------------
@@ -338,25 +325,31 @@ def get_transactions():
 def get_risk_summary():
     try:
         total = transactions_collection.count_documents({})
-        flagged = transactions_collection.count_documents(
-            {"status": {"$in": ["flagged", "review", "high-risk"]}}
-        )
 
-        return jsonify(
-            {
-                "total_transactions": total,
-                "flagged_transactions": flagged,
-                "normal_transactions": max(total - flagged, 0),
-                "risk_rate": round((flagged / total) * 100, 2)
-                if total else 0,
+        flagged = transactions_collection.count_documents({
+            "status": {
+                "$in": [
+                    "flagged",
+                    "Flagged",
+                    "review",
+                    "high-risk",
+                ]
             }
-        ), 200
+        })
+
+        return jsonify({
+            "total_transactions": total,
+            "flagged_transactions": flagged,
+            "normal_transactions": max(total - flagged, 0),
+            "risk_rate": round((flagged / total) * 100, 2)
+            if total else 0,
+        }), 200
 
     except PyMongoError:
         app.logger.exception("Could not calculate risk summary")
-        return jsonify(
-            {"message": "Could not calculate risk summary"}
-        ), 500
+        return jsonify({
+            "message": "Could not calculate risk summary"
+        }), 500
 
 
 # --------------------------------------------------
@@ -374,46 +367,70 @@ def review_transaction(transaction_id):
         return "", 204
 
     try:
-        data = request.get_json(silent=True) or {}
-        status = str(data.get("status", "reviewed")).strip().lower()
-
-        allowed_statuses = {"reviewed", "approved", "rejected"}
-
-        if status not in allowed_statuses:
-            return jsonify(
-                {
-                    "message": (
-                        "Status must be reviewed, approved, or rejected"
-                    )
-                }
-            ), 400
-
-        # Supports transactions identified by either a MongoDB ID
-        # or a custom transaction_id field.
         from bson import ObjectId
         from bson.errors import InvalidId
 
-        conditions = [{"transaction_id": transaction_id}]
+        # Only Admin accounts may review transactions.
+        claims = get_jwt()
+        role = str(claims.get("role", "")).strip().lower()
+
+        if role != "admin":
+            return jsonify({
+                "message": "Admin access required"
+            }), 403
+
+        data = request.get_json(silent=True) or {}
+
+        requested_status = str(
+            data.get("status", "reviewed")
+        ).strip().lower()
+
+        allowed_statuses = {
+            "reviewed": "Reviewed",
+            "approved": "Approved",
+            "rejected": "Rejected",
+        }
+
+        if requested_status not in allowed_statuses:
+            return jsonify({
+                "message": (
+                    "Status must be reviewed, approved, or rejected"
+                )
+            }), 400
+
+        new_status = allowed_statuses[requested_status]
+
+        # Find transactions using the custom "id" field,
+        # "transaction_id", or MongoDB's ObjectId.
+        conditions = [
+            {"id": transaction_id},
+            {"transaction_id": transaction_id},
+        ]
 
         try:
-            conditions.append({"_id": ObjectId(transaction_id)})
+            conditions.append({
+                "_id": ObjectId(transaction_id)
+            })
         except (InvalidId, TypeError):
             pass
 
-        transaction = transactions_collection.find_one(
-            {"$or": conditions}
-        )
+        transaction = transactions_collection.find_one({
+            "$or": conditions
+        })
 
         if not transaction:
-            return jsonify(
-                {"message": "Transaction not found"}
-            ), 404
+            return jsonify({
+                "message": "Transaction not found",
+                "transaction_id": transaction_id,
+            }), 404
+
+        previous_status = transaction.get("status", "Unknown")
 
         result = transactions_collection.update_one(
             {"_id": transaction["_id"]},
             {
                 "$set": {
-                    "status": status,
+                    "status": new_status,
                     "reviewed_by": get_jwt_identity(),
                     "reviewed_at": utc_now(),
                 }
@@ -421,29 +438,54 @@ def review_transaction(transaction_id):
         )
 
         if result.matched_count == 0:
-            return jsonify(
-                {"message": "Transaction was not updated"}
-            ), 404
+            return jsonify({
+                "message": "Transaction was not updated"
+            }), 404
 
-        write_audit(
-            get_jwt_identity(),
-            "TRANSACTION_REVIEW",
-            f"Transaction {transaction_id}: {status}",
-        )
-
-        return jsonify(
-            {
-                "message": "Transaction review updated",
+        # Record the review with transaction and status details.
+        try:
+            audit_collection.insert_one({
+                "username": get_jwt_identity(),
+                "action": "TRANSACTION_REVIEW",
                 "transaction_id": transaction_id,
-                "status": status,
-            }
-        ), 200
+                "previous_status": previous_status,
+                "new_status": new_status,
+                "details": (
+                    f"Transaction {transaction_id}: "
+                    f"{previous_status} -> {new_status}"
+                ),
+                "timestamp": utc_now(),
+            })
+        except PyMongoError:
+            app.logger.exception(
+                "Transaction updated, but audit logging failed"
+            )
+            return jsonify({
+                "message": (
+                    "Transaction updated, but audit logging failed"
+                ),
+                "transaction_id": transaction_id,
+                "status": new_status,
+            }), 500
+
+        return jsonify({
+            "message": "Transaction review updated successfully",
+            "transaction_id": transaction_id,
+            "previous_status": previous_status,
+            "status": new_status,
+        }), 200
 
     except PyMongoError:
         app.logger.exception("Transaction review database error")
-        return jsonify(
-            {"message": "Could not update transaction review"}
-        ), 500
+        return jsonify({
+            "message": "Could not update transaction review"
+        }), 500
+
+    except Exception:
+        app.logger.exception("Unexpected transaction review error")
+        return jsonify({
+            "message": "Unexpected error while reviewing transaction"
+        }), 500
 
 
 # --------------------------------------------------
@@ -462,13 +504,16 @@ def get_audit_logs():
             ).sort("_id", -1).limit(200)
         )
 
-        return jsonify({"audit_logs": logs, "logs": logs}), 200
+        return jsonify({
+            "audit_logs": logs,
+            "logs": logs,
+        }), 200
 
     except PyMongoError:
         app.logger.exception("Could not load audit logs")
-        return jsonify(
-            {"message": "Could not load audit logs"}
-        ), 500
+        return jsonify({
+            "message": "Could not load audit logs"
+        }), 500
 
 
 # --------------------------------------------------
